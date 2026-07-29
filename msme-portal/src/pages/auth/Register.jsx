@@ -434,126 +434,129 @@ export default function Register() {
           setAccountData((prev) => ({ ...prev, [fieldName]: prev[fieldName] ? prev[fieldName] + " " + transcript : transcript }));
         }
       } else {
-        const currentAns = isFollowUp 
-          ? (questionAnswers[deptId]?.[`${qId}_more`] || "")
-          : (questionAnswers[deptId]?.[qId] || "");
-        
-        const newAns = currentAns ? currentAns + " " + transcript : transcript;
-        handleAnswerChange(deptId, qId, newAns, isFollowUp);
-      }
-    };
-
-    recognition.onerror = (err) => {
-      console.error("Speech Recognition error:", err);
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      setListeningTarget(null);
-    };
-  };
-
-  // Active language shortcut references
-  const t = translations[language];
-
-  return (
-    <div className="auth-wrapper" style={{ minHeight: "100vh", padding: "40px 20px", flexDirection: "column", gap: "20px" }}>
-      
-      {/* Top Navigation Bar with Back Button & Language Switcher */}
+    return (
+    <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", background: "#ffffff", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* LEFT PANEL — Form Container */}
       <div style={{
+        width: "560px",
+        flexShrink: 0,
         display: "flex",
+        flexDirection: "column",
         justifyContent: "space-between",
-        alignItems: "center",
-        width: "100%",
-        maxWidth: "620px"
+        padding: "36px 48px",
+        background: "#ffffff",
+        overflowY: "auto",
+        zIndex: 2
       }}>
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          style={{
+        {/* Top Header Navigation */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 14px",
+              borderRadius: "8px",
+              border: "1px solid #cbd5e1",
+              background: "#ffffff",
+              color: "#334155",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 600,
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+            }}
+          >
+            ← {t.back || "Back"}
+          </button>
+
+          {/* Language Switcher Bar */}
+          <div style={{
             display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            padding: "8px 16px",
-            borderRadius: "20px",
-            border: "1px solid var(--border)",
-            background: "var(--code-bg)",
-            color: "var(--text)",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 600
-          }}
-        >
-          ← {t.back || "Back"}
-        </button>
-
-        {/* Language Switcher Bar */}
-        <div style={{
-          display: "flex",
-          background: "var(--code-bg)",
-          border: "1px solid var(--border)",
-          borderRadius: "20px",
-          padding: "4px",
-          gap: "4px"
-        }}>
-          {[
-            { code: "en", label: "English" },
-            { code: "hi", label: "हिंदी" },
-            { code: "gu", label: "ગુજરાતી" }
-          ].map((lang) => (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => setLanguage(lang.code)}
-              style={{
-                padding: "6px 16px",
-                border: "none",
-                borderRadius: "16px",
-                cursor: "pointer",
-                fontWeight: 600,
-                fontSize: "13px",
-                background: language === lang.code ? "var(--accent)" : "transparent",
-                color: language === lang.code ? "white" : "var(--text)"
-              }}
-            >
-              {lang.label}
-            </button>
-          ))}
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            padding: "3px",
+            gap: "4px"
+          }}>
+            {[
+              { code: "en", label: "English" },
+              { code: "hi", label: "हिंदी" },
+              { code: "gu", label: "ગુજરાતી" }
+            ].map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => setLanguage(lang.code)}
+                style={{
+                  padding: "4px 12px",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  background: language === lang.code ? "#2563eb" : "transparent",
+                  color: language === lang.code ? "white" : "#64748b"
+                }}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="auth-card" style={{ maxWidth: "620px" }}>
-        <h1 className="auth-title">{t.title}</h1>
-        <p className="auth-subtitle">{t.subtitle}</p>
+        {/* Center Registration Form */}
+        <div style={{ margin: "auto 0", padding: "10px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#0f172a", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "800", fontSize: "16px" }}>
+              M
+            </div>
+            <span style={{ fontSize: "16px", fontWeight: "800", color: "#0f172a" }}>MSME Portal</span>
+          </div>
 
-        {error && <div className='auth-error'>{error}</div>}
+          <h1 style={{ fontSize: "28px", fontWeight: "800", color: "#0f172a", marginBottom: "6px", letterSpacing: "-0.5px" }}>
+            {t.title || "Register Your Company"}
+          </h1>
+          <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "24px", lineHeight: 1.5 }}>
+            {t.subtitle || "Create your profile to access operational questionnaires and connect with startup solutions."}
+          </p>
 
-        <h2 style={{ fontSize: '20px', marginBottom: '20px' }}>{t.step1Title}</h2>
-            
-            <div className="form-group">
-              <label className="form-label" htmlFor="name">{t.yourName}</label>
+          {error && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", padding: "12px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: 500, marginBottom: "20px" }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ marginBottom: "20px" }}>
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#1e293b", marginBottom: "16px" }}>{t.step1Title}</h2>
+
+            <div className="form-group" style={{ marginBottom: "16px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px", textTransform: "uppercase" }}>{t.yourName}</label>
               <div style={{ display: "flex", gap: "8px" }}>
                 <input
                   id="name"
                   type="text"
                   name="name"
-                  className="form-input"
-                  style={{ flexGrow: 1 }}
                   value={accountData.name}
                   onChange={handleAccountChange}
                   placeholder="e.g. John Doe"
                   required
+                  style={{ flex: 1, height: "42px", padding: "0 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "14px", background: "#f8fafc" }}
                 />
                 <button
                   type="button"
                   onClick={() => handleMicClick(null, null, false, "name")}
                   style={{
-                    padding: "10px",
+                    width: "42px",
+                    height: "42px",
                     borderRadius: "8px",
-                    border: "1px solid var(--border)",
+                    border: "1px solid #cbd5e1",
                     cursor: "pointer",
-                    background: listeningTarget?.fieldName === "name" ? "red" : "var(--code-bg)"
+                    background: listeningTarget?.fieldName === "name" ? "#fee2e2" : "#f1f5f9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
                   }}
                 >
                   🎤
@@ -561,172 +564,240 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="form-row">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
               <div className="form-group">
-                <label className="form-label" htmlFor="email">{t.emailAddress}</label>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px", textTransform: "uppercase" }}>{t.emailAddress}</label>
                 <input
                   id="email"
                   type="email"
                   name="email"
-                  className="form-input"
                   value={accountData.email}
                   onChange={handleAccountChange}
                   placeholder="john@example.com"
                   required
+                  style={{ width: "100%", height: "42px", padding: "0 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "14px", background: "#f8fafc", boxSizing: "border-box" }}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="password">{t.password}</label>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 700, color: "#334155", marginBottom: "6px", textTransform: "uppercase" }}>{t.password}</label>
                 <input
                   id="password"
                   type="password"
                   name="password"
-                  className="form-input"
                   value={accountData.password}
                   onChange={handleAccountChange}
                   placeholder="••••••••"
                   required
+                  style={{ width: "100%", height: "42px", padding: "0 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "14px", background: "#f8fafc", boxSizing: "border-box" }}
                 />
               </div>
             </div>
 
-
-
             <div style={{
-              background: "var(--code-bg)",
-              padding: "20px",
-              borderRadius: "8px",
-              marginTop: "24px",
-              border: "1px solid var(--border)"
+              background: "#f8fafc",
+              padding: "18px",
+              borderRadius: "12px",
+              border: "1px solid #e2e8f0"
             }}>
-              <h3 style={{ fontSize: "16px", margin: "0 0 16px 0" }}>{t.newCompanyProfile}</h3>
+              <h3 style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", margin: "0 0 14px 0" }}>{t.newCompanyProfile}</h3>
                 
-                <div className="form-group">
-                  <label className="form-label">{t.companyName}</label>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input
-                      type="text"
-                      name="name"
-                      className="form-input"
-                      style={{ flexGrow: 1 }}
-                      value={newCompanyData.name}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. Paramount Manufacturing"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleMicClick(null, null, false, "newCompanyData.name")}
-                      style={{
-                        padding: "10px",
-                        borderRadius: "8px",
-                        border: "1px solid var(--border)",
-                        cursor: "pointer",
-                        background: listeningTarget?.fieldName === "newCompanyData.name" ? "red" : "var(--bg)"
-                      }}
-                    >
-                      🎤
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">{t.contactPerson}</label>
-                    <input
-                      type="text"
-                      name="contactPerson"
-                      className="form-input"
-                      value={newCompanyData.contactPerson}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. Jane Smith"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{t.phoneNumber}</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      className="form-input"
-                      value={newCompanyData.phone}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. +91 99999 99999"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">{t.streetAddress}</label>
+              <div className="form-group" style={{ marginBottom: "12px" }}>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.companyName}</label>
+                <div style={{ display: "flex", gap: "8px" }}>
                   <input
                     type="text"
-                    name="street"
-                    className="form-input"
-                    value={newCompanyData.street}
+                    name="name"
+                    value={newCompanyData.name}
                     onChange={handleNewCompanyChange}
-                    placeholder="e.g. GIDC Phase 3"
+                    placeholder="e.g. Paramount Manufacturing"
+                    required
+                    style={{ flex: 1, height: "40px", padding: "0 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", background: "#ffffff" }}
                   />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">{t.city}</label>
-                    <input
-                      type="text"
-                      name="city"
-                      className="form-input"
-                      value={newCompanyData.city}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. Vadodara"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{t.state}</label>
-                    <input
-                      type="text"
-                      name="state"
-                      className="form-input"
-                      value={newCompanyData.state}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. Gujarat"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">{t.country}</label>
-                    <input
-                      type="text"
-                      name="country"
-                      className="form-input"
-                      value={newCompanyData.country}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. India"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{t.pinCode}</label>
-                    <input
-                      type="text"
-                      name="pinCode"
-                      className="form-input"
-                      value={newCompanyData.pinCode}
-                      onChange={handleNewCompanyChange}
-                      placeholder="e.g. 390010"
-                      required
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleMicClick(null, null, false, "newCompanyData.name")}
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                      cursor: "pointer",
+                      background: listeningTarget?.fieldName === "newCompanyData.name" ? "#fee2e2" : "#ffffff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                  >
+                    🎤
+                  </button>
                 </div>
               </div>
 
-            <button type='button' className='btn btn-primary' onClick={handleSubmit} disabled={loading} style={{ marginTop: '32px', width: '100%', padding: '14px' }}>
-              {loading ? 'Registering Account...' : t.submitRegister || 'Submit Registration'}
-            </button>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.contactPerson}</label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={newCompanyData.contactPerson}
+                    onChange={handleNewCompanyChange}
+                    placeholder="e.g. Jane Smith"
+                    style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.phoneNumber}</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={newCompanyData.phone}
+                    onChange={handleNewCompanyChange}
+                    placeholder="e.g. +91 99999 99999"
+                    style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "12px" }}>
+                <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.streetAddress}</label>
+                <input
+                  type="text"
+                  name="street"
+                  value={newCompanyData.street}
+                  onChange={handleNewCompanyChange}
+                  placeholder="e.g. GIDC Phase 3"
+                  style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.city}</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={newCompanyData.city}
+                    onChange={handleNewCompanyChange}
+                    placeholder="e.g. Vadodara"
+                    required
+                    style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.state}</label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={newCompanyData.state}
+                    onChange={handleNewCompanyChange}
+                    placeholder="e.g. Gujarat"
+                    required
+                    style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.country}</label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={newCompanyData.country}
+                    onChange={handleNewCompanyChange}
+                    placeholder="e.g. India"
+                    required
+                    style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "11px", fontWeight: 700, color: "#475569", marginBottom: "4px", textTransform: "uppercase" }}>{t.pinCode}</label>
+                  <input
+                    type="text"
+                    name="pinCode"
+                    value={newCompanyData.pinCode}
+                    onChange={handleNewCompanyChange}
+                    placeholder="e.g. 390010"
+                    required
+                    style={{ width: "100%", height: "38px", padding: "0 10px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{
+              width: "100%",
+              height: "48px",
+              borderRadius: "10px",
+              background: "#0f172a",
+              color: "#ffffff",
+              fontSize: "15px",
+              fontWeight: 700,
+              border: "none",
+              cursor: loading ? "wait" : "pointer",
+              boxShadow: "0 4px 12px rgba(15, 23, 42, 0.2)",
+              transition: "all 0.2s ease",
+              marginTop: "20px"
+            }}
+          >
+            {loading ? "Registering Account..." : t.submitRegister || "Submit & Register"}
+          </button>
+
+          <div style={{ marginTop: "20px", textAlign: "center", fontSize: "14px", color: "#64748b" }}>
+            Already registered?{" "}
+            <Link to="/login" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>
+              Log In
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT PANEL — Relatable MSME Factory Image with Frosted Card Overlay */}
+      <div style={{
+        flex: 1,
+        position: "relative",
+        background: `url('/msme_factory_hero.png') center/cover no-repeat`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "48px"
+      }}>
+        {/* Dark subtle overlay for contrast */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.2) 100%)" }} />
+
+        {/* Frosted Glass Floating Card */}
+        <div style={{
+          position: "relative",
+          zIndex: 2,
+          maxWidth: "460px",
+          background: "rgba(255, 255, 255, 0.22)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          border: "1px solid rgba(255, 255, 255, 0.35)",
+          borderRadius: "24px",
+          padding: "36px",
+          color: "#ffffff",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.2)"
+        }}>
+          <div style={{ display: "inline-block", background: "rgba(255, 255, 255, 0.3)", padding: "4px 12px", borderRadius: "12px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "16px" }}>
+            MSME Innovation Challenge
+          </div>
+
+          <h2 style={{ fontSize: "24px", fontWeight: 800, color: "#ffffff", lineHeight: 1.3, marginBottom: "12px" }}>
+            Empowering your enterprise with dedicated startup solutions
+          </h2>
+
+          <p style={{ fontSize: "14px", color: "rgba(255, 255, 255, 0.88)", lineHeight: 1.6, margin: 0 }}>
+            Identify core operational challenges in your business, share department-specific bottlenecks, and let tech startups build customized tools for your growth.
+          </p>
+        </div>
+      </div>
 
       {/* Recording indicator overlay */}
       {isListening && (
