@@ -61,15 +61,27 @@ function MicButton({ onResult, lang }) {
   );
 }
 
+const DEPT_THEMES = {
+  operations: { primary: "#2563eb", bgLight: "#eff6ff", borderLeft: "#3b82f6", textDark: "#1e40af", badgeBg: "#dbeafe", badgeText: "#1d4ed8", icon: "⚙️" },
+  finance:    { primary: "#059669", bgLight: "#ecfdf5", borderLeft: "#10b981", textDark: "#065f46", badgeBg: "#d1fae5", badgeText: "#047857", icon: "💰" },
+  hr:         { primary: "#d97706", bgLight: "#fffbeb", borderLeft: "#f59e0b", textDark: "#92400e", badgeBg: "#fef3c7", badgeText: "#b45309", icon: "👥" },
+  sales:      { primary: "#dc2626", bgLight: "#fef2f2", borderLeft: "#ef4444", textDark: "#991b1b", badgeBg: "#fee2e2", badgeText: "#b91c1c", icon: "📈" },
+  supply_chain:{ primary: "#7c3aed", bgLight: "#f5f3ff", borderLeft: "#8b5cf6", textDark: "#5b21b6", badgeBg: "#ede9fe", badgeText: "#6d28d9", icon: "🚚" },
+  technology: { primary: "#0891b2", bgLight: "#ecfeff", borderLeft: "#06b6d4", textDark: "#155e75", badgeBg: "#cffafe", badgeText: "#0e7490", icon: "💻" },
+  regulatory: { primary: "#4b5563", bgLight: "#f8fafc", borderLeft: "#64748b", textDark: "#1e293b", badgeBg: "#e2e8f0", badgeText: "#334155", icon: "📜" },
+  energy:     { primary: "#16a34a", bgLight: "#f0fdf4", borderLeft: "#22c55e", textDark: "#166534", badgeBg: "#dcfce7", badgeText: "#15803d", icon: "🌱" }
+};
+
 // ── Custom Question Renderer ──────────────────────────
 function CustomQItem({ q, index, answer, onChange }) {
   const cardStyle = {
     background: "#ffffff",
     border: "1px solid #e2e8f0",
+    borderLeft: "5px solid #2563eb",
     borderRadius: "12px",
     padding: "18px 20px",
     marginBottom: "16px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+    boxShadow: "0 2px 4px rgba(0,0,0,0.03)"
   };
 
   const headerStyle = {
@@ -188,17 +200,20 @@ function CustomQItem({ q, index, answer, onChange }) {
   );
 }
 
-// ── Dept Questions Renderer (structured) ─────────────
+// ── Dept Questions Renderer (structured with department theme) ─────────────
 function DeptQItem({ q, index, lang = "en", answer, onChange }) {
   const text = q.question?.[lang] || q.question?.en || q.question;
+  const deptKey = q.departmentId || "operations";
+  const theme = DEPT_THEMES[deptKey] || DEPT_THEMES.operations;
 
   const cardStyle = {
     background: "#ffffff",
     border: "1px solid #e2e8f0",
+    borderLeft: `5px solid ${theme.borderLeft}`,
     borderRadius: "12px",
     padding: "18px 20px",
     marginBottom: "16px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+    boxShadow: "0 2px 4px rgba(0,0,0,0.03)"
   };
 
   const headerStyle = {
@@ -209,11 +224,11 @@ function DeptQItem({ q, index, lang = "en", answer, onChange }) {
   };
 
   const badgeStyle = {
-    background: "#f0fdf4",
-    color: "#16a34a",
+    background: theme.badgeBg,
+    color: theme.badgeText,
     fontWeight: 700,
     fontSize: "12px",
-    padding: "3px 9px",
+    padding: "3px 10px",
     borderRadius: "6px",
     flexShrink: 0
   };
@@ -244,8 +259,8 @@ function DeptQItem({ q, index, lang = "en", answer, onChange }) {
                   flex: 1,
                   padding: "10px",
                   borderRadius: "8px",
-                  border: answer == n ? "2px solid #2563eb" : "1px solid #cbd5e1",
-                  background: answer == n ? "#2563eb" : "#f8fafc",
+                  border: answer == n ? `2px solid ${theme.primary}` : "1px solid #cbd5e1",
+                  background: answer == n ? theme.primary : "#f8fafc",
                   color: answer == n ? "#ffffff" : "#334155",
                   fontWeight: 700,
                   fontSize: "14px",
@@ -274,9 +289,9 @@ function DeptQItem({ q, index, lang = "en", answer, onChange }) {
                 flex: 1,
                 padding: "10px",
                 borderRadius: "8px",
-                border: answer === opt ? "2px solid #2563eb" : "1px solid #cbd5e1",
-                background: answer === opt ? "#eff6ff" : "#f8fafc",
-                color: answer === opt ? "#1e40af" : "#334155",
+                border: answer === opt ? `2px solid ${theme.primary}` : "1px solid #cbd5e1",
+                background: answer === opt ? theme.bgLight : "#f8fafc",
+                color: answer === opt ? theme.textDark : "#334155",
                 fontWeight: 600,
                 cursor: "pointer"
               }}
@@ -304,16 +319,16 @@ function DeptQItem({ q, index, lang = "en", answer, onChange }) {
                   fontSize: 13,
                   padding: "10px 14px",
                   borderRadius: "8px",
-                  border: checked ? "1px solid #93c5fd" : "1px solid #e2e8f0",
-                  background: checked ? "#eff6ff" : "#f8fafc",
-                  color: checked ? "#1e40af" : "#334155",
+                  border: checked ? `1px solid ${theme.borderLeft}` : "1px solid #e2e8f0",
+                  background: checked ? theme.bgLight : "#f8fafc",
+                  color: checked ? theme.textDark : "#334155",
                   fontWeight: checked ? 600 : 400
                 }}
               >
                 <input
                   type="checkbox"
                   checked={checked}
-                  style={{ width: 16, height: 16, accentColor: "#2563eb" }}
+                  style={{ width: 16, height: 16, accentColor: theme.primary }}
                   onChange={() => {
                     const next = checked ? selected.filter(v => v !== opt.value) : [...selected, opt.value];
                     onChange(q._id, next);
@@ -709,10 +724,25 @@ export default function DeptDashboard() {
                   departments.map(dept => {
                     const qs = deptQuestions.filter(q => q.departmentId === dept._id);
                     if (qs.length === 0) return null;
+                    const theme = DEPT_THEMES[dept._id] || DEPT_THEMES.operations;
                     return (
                       <div key={dept._id} style={{ marginBottom: 32 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.5px", marginBottom: 16, textTransform: "uppercase", borderBottom: "1px solid var(--border)", paddingBottom: 8 }}>
-                          {dept.name}
+                        <div style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: theme.primary,
+                          background: theme.bgLight,
+                          borderLeft: `4px solid ${theme.borderLeft}`,
+                          padding: "10px 14px",
+                          borderRadius: "8px",
+                          letterSpacing: "0.5px",
+                          marginBottom: 16,
+                          textTransform: "uppercase",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px"
+                        }}>
+                          <span>{theme.icon}</span> {dept.name} ({qs.length} Questions)
                         </div>
                         {qs.map((q, idx) => (
                           <DeptQItem

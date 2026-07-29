@@ -14,6 +14,17 @@ const DEPT_ALIASES = {
   energy: ["energy", "sustainability", "energy & sustainability", "environment"],
 };
 
+const DEPT_THEMES = {
+  operations: { primary: "#2563eb", bgLight: "#eff6ff", borderLeft: "#3b82f6", textDark: "#1e40af", badgeBg: "#dbeafe", badgeText: "#1d4ed8", icon: "⚙️" },
+  finance:    { primary: "#059669", bgLight: "#ecfdf5", borderLeft: "#10b981", textDark: "#065f46", badgeBg: "#d1fae5", badgeText: "#047857", icon: "💰" },
+  hr:         { primary: "#d97706", bgLight: "#fffbeb", borderLeft: "#f59e0b", textDark: "#92400e", badgeBg: "#fef3c7", badgeText: "#b45309", icon: "👥" },
+  sales:      { primary: "#dc2626", bgLight: "#fef2f2", borderLeft: "#ef4444", textDark: "#991b1b", badgeBg: "#fee2e2", badgeText: "#b91c1c", icon: "📈" },
+  supply_chain:{ primary: "#7c3aed", bgLight: "#f5f3ff", borderLeft: "#8b5cf6", textDark: "#5b21b6", badgeBg: "#ede9fe", badgeText: "#6d28d9", icon: "🚚" },
+  technology: { primary: "#0891b2", bgLight: "#ecfeff", borderLeft: "#06b6d4", textDark: "#155e75", badgeBg: "#cffafe", badgeText: "#0e7490", icon: "💻" },
+  regulatory: { primary: "#4b5563", bgLight: "#f8fafc", borderLeft: "#64748b", textDark: "#1e293b", badgeBg: "#e2e8f0", badgeText: "#334155", icon: "📜" },
+  energy:     { primary: "#16a34a", bgLight: "#f0fdf4", borderLeft: "#22c55e", textDark: "#166534", badgeBg: "#dcfce7", badgeText: "#15803d", icon: "🌱" }
+};
+
 export default function EmployeeAnswersModal({ employeeId, onClose }) {
   const [data, setData] = useState(null);
   const [customQs, setCustomQs] = useState([]);
@@ -112,11 +123,26 @@ export default function EmployeeAnswersModal({ employeeId, onClose }) {
             structuredDepts.map(deptConfig => {
               const deptTitle = translations.en[deptConfig.id]?.name || deptConfig.id;
               const deptTranslations = translations.en[deptConfig.id] || {};
+              const theme = DEPT_THEMES[deptConfig.id] || DEPT_THEMES.operations;
 
               return (
                 <div key={deptConfig.id} style={{ marginBottom: 24 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>
-                    🏢 {deptTitle} ({deptConfig.questions.length} Questions)
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: theme.primary,
+                    background: theme.bgLight,
+                    borderLeft: `4px solid ${theme.borderLeft}`,
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    letterSpacing: "0.5px",
+                    marginBottom: 14,
+                    textTransform: "uppercase",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}>
+                    <span>{theme.icon}</span> {deptTitle} ({deptConfig.questions.length} Questions)
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -125,16 +151,17 @@ export default function EmployeeAnswersModal({ employeeId, onClose }) {
                       const ans = findAnswer(deptConfig.id, q.id);
 
                       return (
-                        <div key={q.id} style={{ background: "#f8fafc", padding: 14, borderRadius: 8, border: "1px solid #e2e8f0" }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
-                            {idx + 1}. {qText}
+                        <div key={q.id} style={{ background: "#ffffff", padding: 14, borderRadius: 8, border: "1px solid #e2e8f0", borderLeft: `4px solid ${theme.borderLeft}` }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", marginBottom: 8, display: "flex", gap: 8, alignItems: "flex-start" }}>
+                            <span style={{ background: theme.badgeBg, color: theme.badgeText, fontSize: 11, fontWeight: 700, padding: "2px 7px", borderRadius: 4, flexShrink: 0 }}>Q{idx + 1}</span>
+                            <span>{qText}</span>
                           </div>
                           {ans !== null && ans !== undefined && ans !== "" ? (
-                            <div style={{ fontSize: 13, color: "#0f172a", background: "#ffffff", padding: "10px 12px", borderRadius: 6, border: "1px solid #cbd5e1", fontWeight: 500 }}>
+                            <div style={{ fontSize: 13, color: theme.textDark, background: theme.bgLight, padding: "10px 12px", borderRadius: 6, border: `1px solid ${theme.badgeBg}`, fontWeight: 600 }}>
                               {Array.isArray(ans) ? ans.join(", ") : String(ans)}
                             </div>
                           ) : (
-                            <div style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic", background: "#ffffff", padding: "8px 12px", borderRadius: 6, border: "1px dashed #cbd5e1" }}>
+                            <div style={{ fontSize: 12, color: "#94a3b8", fontStyle: "italic", background: "#f8fafc", padding: "8px 12px", borderRadius: 6, border: "1px dashed #cbd5e1" }}>
                               ⏳ Not answered yet
                             </div>
                           )}
