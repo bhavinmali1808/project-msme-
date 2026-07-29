@@ -560,12 +560,30 @@ export default function DeptDashboard() {
               </p>
               
               {/* Language Selector */}
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f8fafc", padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
-                <Globe size={14} color="#64748b" />
+              <div style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#ffffff",
+                padding: "6px 14px",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              }}>
+                <Globe size={16} color="#2563eb" style={{ flexShrink: 0 }} />
                 <select 
                   value={lang}
                   onChange={(e) => setLang(e.target.value)}
-                  style={{ border: "none", background: "transparent", fontSize: "12px", fontWeight: "600", color: "#334155", outline: "none", cursor: "pointer" }}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "#0f172a",
+                    outline: "none",
+                    cursor: "pointer",
+                    paddingRight: "4px"
+                  }}
                 >
                   <option value="en">English</option>
                   <option value="hi">हिन्दी (Hindi)</option>
