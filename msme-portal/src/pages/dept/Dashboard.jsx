@@ -764,16 +764,48 @@ export default function DeptDashboard() {
             </div>
           </div>
 
-          {/* Save button */}
-          <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-end", gap: 12 }}>
+          {/* Sticky Bottom Save Action Bar */}
+          <div style={{
+            position: "sticky",
+            bottom: "20px",
+            zIndex: 90,
+            marginTop: 32,
+            background: "#ffffff",
+            border: "1px solid #cbd5e1",
+            padding: "14px 24px",
+            borderRadius: "14px",
+            boxShadow: "0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.05)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500, display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: progress === 100 ? "#16a34a" : "#2563eb" }} />
+              Progress: <strong style={{ color: "#0f172a" }}>{progress}% Completed</strong>
+            </div>
+
             <button
-              className="btn btn-primary btn-lg"
+              type="button"
               onClick={handleSave}
               disabled={saving}
-              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "12px 28px",
+                fontSize: "15px",
+                fontWeight: 700,
+                color: "#ffffff",
+                background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+                border: "none",
+                borderRadius: "10px",
+                boxShadow: "0 4px 14px 0 rgba(37, 99, 235, 0.39)",
+                cursor: saving ? "wait" : "pointer",
+                transition: "transform 0.2s ease"
+              }}
             >
-              <Save size={18} />
-              {saving ? "Saving…" : "Save All Answers"}
+              <Save size={19} />
+              {saving ? "Saving All Answers…" : "Save All Answers"}
             </button>
           </div>
         </>
