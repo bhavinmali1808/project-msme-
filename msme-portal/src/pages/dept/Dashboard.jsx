@@ -202,7 +202,8 @@ function CustomQItem({ q, index, answer, onChange }) {
 
 // ── Dept Questions Renderer (structured with department theme) ─────────────
 function DeptQItem({ q, index, lang = "en", answer, onChange }) {
-  const text = q.question?.[lang] || q.question?.en || q.question;
+  const deptTrans = translations[lang]?.[q.departmentId] || translations["en"]?.[q.departmentId] || {};
+  const text = deptTrans[q.originalId] || q.question?.[lang] || q.question?.en || q.question;
   const deptKey = q.departmentId || "operations";
   const theme = DEPT_THEMES[deptKey] || DEPT_THEMES.operations;
 
@@ -598,8 +599,8 @@ export default function DeptDashboard() {
           )}
 
           <div className="dual-panel" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
-            {/* LEFT PANEL — Custom Questions (Sticky Position) */}
-            <div className="q-panel" style={{ position: "sticky", top: "20px", alignSelf: "flex-start", maxHeight: "calc(100vh - 40px)", overflowY: "auto" }}>
+            {/* LEFT PANEL — Custom Questions (Sticky Position below navbar) */}
+            <div className="q-panel" style={{ position: "sticky", top: "84px", alignSelf: "flex-start", maxHeight: "calc(100vh - 104px)", overflowY: "auto" }}>
               <div className="q-panel-header">
                 <HelpCircle size={20} color="var(--accent)" />
                 <div>
@@ -743,7 +744,7 @@ export default function DeptDashboard() {
                           alignItems: "center",
                           gap: "8px"
                         }}>
-                          {dept.name} ({qs.length} Questions)
+                          {translations[lang]?.[dept._id]?.name || translations["en"]?.[dept._id]?.name || dept.name} ({qs.length} Questions)
                         </div>
                         {qs.map((q, idx) => (
                           <DeptQItem
