@@ -4,6 +4,7 @@ import DeptLayout from "../../components/layout/DeptLayout";
 import api from "../../services/api";
 import { DEPARTMENTS_CONFIG } from "../../utils/questions";
 import { translations } from "../../i18n/languages";
+import { Mic, MicOff, Globe, HelpCircle, Building2, Save, CheckCircle } from "lucide-react";
 
 // ── Speech-to-Text Component ──────────────────────────
 function MicButton({ onResult, lang }) {
@@ -17,7 +18,6 @@ function MicButton({ onResult, lang }) {
       return;
     }
     const recognition = new SpeechRecognition();
-    // Map our lang codes to BCP 47 codes
     recognition.lang = lang === "hi" ? "hi-IN" : lang === "gu" ? "gu-IN" : "en-IN";
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -56,20 +56,20 @@ function MicButton({ onResult, lang }) {
       }}
       title="Dictate answer (Speech to Text)"
     >
-      {listening ? <span style={{ fontSize: 16 }}>🛑</span> : <span style={{ fontSize: 16 }}>🎤</span>}
+      {listening ? <MicOff size={18} color="#ef4444" /> : <Mic size={18} color="#64748b" />}
     </button>
   );
 }
 
 const DEPT_THEMES = {
-  operations: { primary: "#2563eb", bgLight: "#eff6ff", borderLeft: "#3b82f6", textDark: "#1e40af", badgeBg: "#dbeafe", badgeText: "#1d4ed8", icon: "⚙️" },
-  finance:    { primary: "#059669", bgLight: "#ecfdf5", borderLeft: "#10b981", textDark: "#065f46", badgeBg: "#d1fae5", badgeText: "#047857", icon: "💰" },
-  hr:         { primary: "#d97706", bgLight: "#fffbeb", borderLeft: "#f59e0b", textDark: "#92400e", badgeBg: "#fef3c7", badgeText: "#b45309", icon: "👥" },
-  sales:      { primary: "#dc2626", bgLight: "#fef2f2", borderLeft: "#ef4444", textDark: "#991b1b", badgeBg: "#fee2e2", badgeText: "#b91c1c", icon: "📈" },
-  supply_chain:{ primary: "#7c3aed", bgLight: "#f5f3ff", borderLeft: "#8b5cf6", textDark: "#5b21b6", badgeBg: "#ede9fe", badgeText: "#6d28d9", icon: "🚚" },
-  technology: { primary: "#0891b2", bgLight: "#ecfeff", borderLeft: "#06b6d4", textDark: "#155e75", badgeBg: "#cffafe", badgeText: "#0e7490", icon: "💻" },
-  regulatory: { primary: "#4b5563", bgLight: "#f8fafc", borderLeft: "#64748b", textDark: "#1e293b", badgeBg: "#e2e8f0", badgeText: "#334155", icon: "📜" },
-  energy:     { primary: "#16a34a", bgLight: "#f0fdf4", borderLeft: "#22c55e", textDark: "#166534", badgeBg: "#dcfce7", badgeText: "#15803d", icon: "🌱" }
+  operations: { primary: "#2563eb", bgLight: "#eff6ff", borderLeft: "#3b82f6", textDark: "#1e40af", badgeBg: "#dbeafe", badgeText: "#1d4ed8" },
+  finance:    { primary: "#059669", bgLight: "#ecfdf5", borderLeft: "#10b981", textDark: "#065f46", badgeBg: "#d1fae5", badgeText: "#047857" },
+  hr:         { primary: "#d97706", bgLight: "#fffbeb", borderLeft: "#f59e0b", textDark: "#92400e", badgeBg: "#fef3c7", badgeText: "#b45309" },
+  sales:      { primary: "#dc2626", bgLight: "#fef2f2", borderLeft: "#ef4444", textDark: "#991b1b", badgeBg: "#fee2e2", badgeText: "#b91c1c" },
+  supply_chain:{ primary: "#7c3aed", bgLight: "#f5f3ff", borderLeft: "#8b5cf6", textDark: "#5b21b6", badgeBg: "#ede9fe", badgeText: "#6d28d9" },
+  technology: { primary: "#0891b2", bgLight: "#ecfeff", borderLeft: "#06b6d4", textDark: "#155e75", badgeBg: "#cffafe", badgeText: "#0e7490" },
+  regulatory: { primary: "#4b5563", bgLight: "#f8fafc", borderLeft: "#64748b", textDark: "#1e293b", badgeBg: "#e2e8f0", badgeText: "#334155" },
+  energy:     { primary: "#16a34a", bgLight: "#f0fdf4", borderLeft: "#22c55e", textDark: "#166534", badgeBg: "#dcfce7", badgeText: "#15803d" }
 };
 
 // ── Custom Question Renderer ──────────────────────────
@@ -560,7 +560,7 @@ export default function DeptDashboard() {
               
               {/* Language Selector */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f8fafc", padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
-                <span style={{ fontSize: 14 }}>🌐</span>
+                <Globe size={14} color="#64748b" />
                 <select 
                   value={lang}
                   onChange={(e) => setLang(e.target.value)}
@@ -591,16 +591,17 @@ export default function DeptDashboard() {
         <>
           {error && <div className="auth-error" style={{ marginBottom: 20 }}>{error}</div>}
           {saved && (
-            <div style={{ background: "var(--success-bg)", border: "1px solid rgba(22,163,74,0.2)", color: "var(--success)", padding: "12px 16px", borderRadius: "var(--radius)", marginBottom: 20, fontWeight: 600, fontSize: 14 }}>
-              ✓ Answers saved successfully!
+            <div style={{ background: "var(--success-bg)", border: "1px solid rgba(22,163,74,0.2)", color: "var(--success)", padding: "12px 16px", borderRadius: "var(--radius)", marginBottom: 20, fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              <CheckCircle size={18} />
+              Answers saved successfully!
             </div>
           )}
 
-          <div className="dual-panel">
-            {/* LEFT PANEL — Custom Questions */}
-            <div className="q-panel">
+          <div className="dual-panel" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
+            {/* LEFT PANEL — Custom Questions (Sticky Position) */}
+            <div className="q-panel" style={{ position: "sticky", top: "20px", alignSelf: "flex-start", maxHeight: "calc(100vh - 40px)", overflowY: "auto" }}>
               <div className="q-panel-header">
-                <span style={{ fontSize: 20 }}>❓</span>
+                <HelpCircle size={20} color="var(--accent)" />
                 <div>
                   <div className="q-panel-title">Custom Questions</div>
                   <div style={{ fontSize: 11, color: "var(--text-sub)" }}>From your company admin</div>
@@ -703,7 +704,7 @@ export default function DeptDashboard() {
             {/* RIGHT PANEL — Dept Structured Questions */}
             <div className="q-panel">
               <div className="q-panel-header">
-                <span style={{ fontSize: 20 }}>🏢</span>
+                <Building2 size={20} color="var(--accent)" />
                 <div>
                   <div className="q-panel-title">Department Questions</div>
                   <div style={{ fontSize: 11, color: "var(--text-sub)" }}>
@@ -742,7 +743,7 @@ export default function DeptDashboard() {
                           alignItems: "center",
                           gap: "8px"
                         }}>
-                          <span>{theme.icon}</span> {dept.name} ({qs.length} Questions)
+                          {dept.name} ({qs.length} Questions)
                         </div>
                         {qs.map((q, idx) => (
                           <DeptQItem
@@ -768,8 +769,10 @@ export default function DeptDashboard() {
               className="btn btn-primary btn-lg"
               onClick={handleSave}
               disabled={saving}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
-              {saving ? "Saving…" : "💾 Save All Answers"}
+              <Save size={18} />
+              {saving ? "Saving…" : "Save All Answers"}
             </button>
           </div>
         </>
