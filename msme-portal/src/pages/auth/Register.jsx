@@ -433,8 +433,24 @@ export default function Register() {
         } else {
           setAccountData((prev) => ({ ...prev, [fieldName]: prev[fieldName] ? prev[fieldName] + " " + transcript : transcript }));
         }
-      } else {
-    return (
+      }
+    };
+
+    recognition.onerror = (err) => {
+      console.error("Speech Recognition error:", err);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setListeningTarget(null);
+    };
+  };
+
+  // Active language shortcut references
+  const t = translations[language];
+
+  return (
     <div style={{ display: "flex", width: "100vw", height: "100vh", overflow: "hidden", background: "#ffffff", fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* LEFT PANEL — Form Container */}
       <div style={{
