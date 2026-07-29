@@ -1,143 +1,319 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import DeptLayout from "../../components/layout/DeptLayout";
 import api from "../../services/api";
 import { DEPARTMENTS_CONFIG } from "../../utils/questions";
 import { translations } from "../../i18n/languages";
 
+// ── Speech-to-Text Component ──────────────────────────
+function MicButton({ onResult, lang }) {
+  const [listening, setListening] = useState(false);
+
+  const toggleMic = () => {
+    if (listening) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    // Map our lang codes to BCP 47 codes
+    recognition.lang = lang === "hi" ? "hi-IN" : lang === "gu" ? "gu-IN" : "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setListening(true);
+    recognition.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      onResult(transcript);
+    };
+    recognition.onerror = (e) => {
+      console.error("Speech recognition error", e);
+      setListening(false);
+    };
+    recognition.onend = () => setListening(false);
+    
+    recognition.start();
+  };
+
+  return (
+    <button 
+      type="button" 
+      onClick={toggleMic}
+      style={{
+        background: listening ? "#fee2e2" : "#f1f5f9",
+        color: listening ? "#ef4444" : "#64748b",
+        border: "none",
+        borderRadius: "8px",
+        width: "36px",
+        height: "36px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "all 0.2s"
+      }}
+      title="Dictate answer (Speech to Text)"
+    >
+      {listening ? <span style={{ fontSize: 16 }}>🛑</span> : <span style={{ fontSize: 16 }}>🎤</span>}
+    </button>
+  );
+}
+
 // ── Custom Question Renderer ──────────────────────────
-function CustomQItem({ q, answer, onChange }) {
-  if (q.type === "yesno") {
-    return (
-      <div className="q-item">
-        <div className="q-text">{q.text}</div>
-        <div className="yesno-row">
+function CustomQItem({ q, index, answer, onChange }) {
+  const cardStyle = {
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    padding: "18px 20px",
+    marginBottom: "16px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+  };
+
+  const headerStyle = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "10px",
+    marginBottom: "14px"
+  };
+
+  const badgeStyle = {
+    background: "#eff6ff",
+    color: "#2563eb",
+    fontWeight: 700,
+    fontSize: "12px",
+    padding: "3px 9px",
+    borderRadius: "6px",
+    flexShrink: 0
+  };
+
+  const titleStyle = {
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#1e293b",
+    lineHeight: 1.5
+  };
+
+  return (
+    <div style={cardStyle}>
+      <div style={headerStyle}>
+        {index && <span style={badgeStyle}>Q{index}</span>}
+        <div style={titleStyle}>{q.text}</div>
+      </div>
+
+      {q.type === "yesno" && (
+        <div className="yesno-row" style={{ display: "flex", gap: "10px" }}>
           {["Yes", "No"].map(opt => (
             <button
               key={opt}
               type="button"
               className={"yesno-btn" + (answer === opt ? " selected" : "")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: answer === opt ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                background: answer === opt ? "#eff6ff" : "#f8fafc",
+                color: answer === opt ? "#1e40af" : "#334155",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
               onClick={() => onChange(q._id, opt)}
             >
               {opt}
             </button>
           ))}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (q.type === "scale") {
-    return (
-      <div className="q-item">
-        <div className="q-text">{q.text}</div>
-        <div className="scale-row">
-          {[1, 2, 3, 4, 5].map(n => (
-            <button
-              key={n}
-              type="button"
-              className={"scale-btn" + (answer == n ? " selected" : "")}
-              onClick={() => onChange(q._id, n)}
-            >
-              {n}
-            </button>
-          ))}
+      {q.type === "scale" && (
+        <div>
+          <div className="scale-row" style={{ display: "flex", gap: "8px", marginBottom: "6px" }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                type="button"
+                className={"scale-btn" + (answer == n ? " selected" : "")}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: answer == n ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                  background: answer == n ? "#2563eb" : "#f8fafc",
+                  color: answer == n ? "#ffffff" : "#334155",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  cursor: "pointer"
+                }}
+                onClick={() => onChange(q._id, n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", fontWeight: 500 }}>
+            <span>1 (Low)</span><span>5 (High)</span>
+          </div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-sub)" }}>
-          <span>Low</span><span>High</span>
+      )}
+
+      {q.type === "multiline" && (
+        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+          <textarea
+            className="form-textarea"
+            value={answer || ""}
+            onChange={e => onChange(q._id, e.target.value)}
+            placeholder="Write your detailed answer here…"
+            style={{ flex: 1, minHeight: 90, borderRadius: "8px", border: "1px solid #cbd5e1", padding: "10px 12px", fontSize: "14px" }}
+          />
+          <MicButton lang="en" onResult={(text) => onChange(q._id, (answer || "") + (answer ? " " : "") + text)} />
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (q.type === "multiline") {
-    return (
-      <div className="q-item">
-        <div className="q-text">{q.text}</div>
-        <textarea
-          className="form-textarea"
-          value={answer || ""}
-          onChange={e => onChange(q._id, e.target.value)}
-          placeholder="Write your answer here…"
-        />
-      </div>
-    );
-  }
-
-  // default: text
-  return (
-    <div className="q-item">
-      <div className="q-text">{q.text}</div>
-      <input
-        className="form-input"
-        value={answer || ""}
-        onChange={e => onChange(q._id, e.target.value)}
-        placeholder="Your answer…"
-      />
+      {(q.type !== "yesno" && q.type !== "scale" && q.type !== "multiline") && (
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            className="form-input"
+            value={answer || ""}
+            onChange={e => onChange(q._id, e.target.value)}
+            placeholder="Your answer…"
+            style={{ flex: 1, borderRadius: "8px", border: "1px solid #cbd5e1", padding: "10px 12px", fontSize: "14px" }}
+          />
+          <MicButton lang="en" onResult={(text) => onChange(q._id, (answer || "") + (answer ? " " : "") + text)} />
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Dept Questions Renderer (structured) ─────────────
-function DeptQItem({ q, lang = "en", answer, onChange }) {
+function DeptQItem({ q, index, lang = "en", answer, onChange }) {
   const text = q.question?.[lang] || q.question?.en || q.question;
 
-  if (q.type === "scale") {
-    return (
-      <div className="q-item">
-        <div className="q-text">{text}</div>
-        <div className="scale-row">
-          {[1, 2, 3, 4, 5].map(n => (
-            <button
-              key={n}
-              type="button"
-              className={"scale-btn" + (answer == n ? " selected" : "")}
-              onClick={() => onChange(q._id, n)}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-sub)" }}>
-          <span>Low</span><span>High</span>
-        </div>
-      </div>
-    );
-  }
+  const cardStyle = {
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    padding: "18px 20px",
+    marginBottom: "16px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+  };
 
-  if (q.type === "yesNo" || q.type === "yesno") {
-    return (
-      <div className="q-item">
-        <div className="q-text">{text}</div>
-        <div className="yesno-row">
+  const headerStyle = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "10px",
+    marginBottom: "14px"
+  };
+
+  const badgeStyle = {
+    background: "#f0fdf4",
+    color: "#16a34a",
+    fontWeight: 700,
+    fontSize: "12px",
+    padding: "3px 9px",
+    borderRadius: "6px",
+    flexShrink: 0
+  };
+
+  const titleStyle = {
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#1e293b",
+    lineHeight: 1.5
+  };
+
+  return (
+    <div style={cardStyle}>
+      <div style={headerStyle}>
+        {index && <span style={badgeStyle}>Q{index}</span>}
+        <div style={titleStyle}>{text}</div>
+      </div>
+
+      {q.type === "scale" && (
+        <div>
+          <div className="scale-row" style={{ display: "flex", gap: "8px", marginBottom: "6px" }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button
+                key={n}
+                type="button"
+                className={"scale-btn" + (answer == n ? " selected" : "")}
+                style={{
+                  flex: 1,
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: answer == n ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                  background: answer == n ? "#2563eb" : "#f8fafc",
+                  color: answer == n ? "#ffffff" : "#334155",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  cursor: "pointer"
+                }}
+                onClick={() => onChange(q._id, n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", fontWeight: 500 }}>
+            <span>1 (Low)</span><span>5 (High)</span>
+          </div>
+        </div>
+      )}
+
+      {(q.type === "yesNo" || q.type === "yesno") && (
+        <div className="yesno-row" style={{ display: "flex", gap: "10px" }}>
           {["Yes", "No"].map(opt => (
             <button
               key={opt}
               type="button"
               className={"yesno-btn" + (answer === opt ? " selected" : "")}
+              style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: "8px",
+                border: answer === opt ? "2px solid #2563eb" : "1px solid #cbd5e1",
+                background: answer === opt ? "#eff6ff" : "#f8fafc",
+                color: answer === opt ? "#1e40af" : "#334155",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
               onClick={() => onChange(q._id, opt)}
             >
               {opt}
             </button>
           ))}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (q.type === "multiSelect") {
-    const selected = Array.isArray(answer) ? answer : [];
-    return (
-      <div className="q-item">
-        <div className="q-text">{text}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {q.type === "multiSelect" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {(q.options || []).map(opt => {
+            const selected = Array.isArray(answer) ? answer : [];
             const checked = selected.includes(opt.value);
             return (
-              <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13 }}>
+              <label 
+                key={opt.value} 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 10, 
+                  cursor: "pointer", 
+                  fontSize: 13,
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: checked ? "1px solid #93c5fd" : "1px solid #e2e8f0",
+                  background: checked ? "#eff6ff" : "#f8fafc",
+                  color: checked ? "#1e40af" : "#334155",
+                  fontWeight: checked ? 600 : 400
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={checked}
+                  style={{ width: 16, height: 16, accentColor: "#2563eb" }}
                   onChange={() => {
                     const next = checked ? selected.filter(v => v !== opt.value) : [...selected, opt.value];
                     onChange(q._id, next);
@@ -148,33 +324,33 @@ function DeptQItem({ q, lang = "en", answer, onChange }) {
             );
           })}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (q.type === "textarea" || q.type === "text") {
-    return (
-      <div className="q-item">
-        <div className="q-text">{text}</div>
-        <textarea
-          className="form-textarea"
-          value={answer || ""}
-          onChange={e => onChange(q._id, e.target.value)}
-          placeholder="Your answer…"
-        />
-      </div>
-    );
-  }
+      {(q.type === "textarea") && (
+        <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+          <textarea
+            className="form-textarea"
+            value={answer || ""}
+            onChange={e => onChange(q._id, e.target.value)}
+            placeholder="Your answer…"
+            style={{ flex: 1, minHeight: 90, borderRadius: "8px", border: "1px solid #cbd5e1", padding: "10px 12px", fontSize: "14px" }}
+          />
+          <MicButton lang={lang} onResult={(t) => onChange(q._id, (answer || "") + (answer ? " " : "") + t)} />
+        </div>
+      )}
 
-  return (
-    <div className="q-item">
-      <div className="q-text">{text}</div>
-      <input
-        className="form-input"
-        value={answer || ""}
-        onChange={e => onChange(q._id, e.target.value)}
-        placeholder="Your answer…"
-      />
+      {(q.type !== "scale" && q.type !== "yesNo" && q.type !== "yesno" && q.type !== "multiSelect" && q.type !== "textarea") && (
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            className="form-input"
+            value={answer || ""}
+            onChange={e => onChange(q._id, e.target.value)}
+            placeholder="Your answer…"
+            style={{ flex: 1, borderRadius: "8px", border: "1px solid #cbd5e1", padding: "10px 12px", fontSize: "14px" }}
+          />
+          <MicButton lang={lang} onResult={(t) => onChange(q._id, (answer || "") + (answer ? " " : "") + t)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -192,6 +368,7 @@ export default function DeptDashboard() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [lang, setLang] = useState("en");
 
   useEffect(() => {
     const load = async () => {
@@ -222,35 +399,55 @@ export default function DeptDashboard() {
         let matchedDepts = [];
 
         for (const deptName of deptNames) {
-          const matchedDept = DEPARTMENTS_CONFIG.find(d => {
-            const tName = translations["en"]?.[d.id]?.name;
-            return d.id?.toLowerCase() === deptName?.toLowerCase() ||
-                   tName?.toLowerCase() === deptName?.toLowerCase();
-          });
+          // ── Robust matching: covers all 8 DEPARTMENTS_CONFIG entries ──
+        const DEPT_ALIASES = {
+          operations:   ["operations", "operations & production", "production", "manufacturing", "factory", "plant", "ops", "production head", "plant manager"],
+          finance:      ["finance", "finance & working capital", "accounts", "accounting", "accounts head", "financial", "working capital", "cfo", "accounts department"],
+          hr:           ["hr", "hr & workforce", "human resources", "human resource", "workforce", "people", "talent", "hr manager", "human resources manager", "people ops"],
+          sales:        ["sales", "sales & marketing", "marketing", "business development", "bd", "commercial", "sales manager", "marketing head"],
+          supply_chain: ["supply chain", "supply_chain", "procurement", "purchase", "purchasing", "sourcing", "logistics", "supply", "supply chain manager", "logistics head", "procurement head"],
+          technology:   ["technology", "it", "information technology", "tech", "digital", "software", "it head", "cto", "technology head", "it manager"],
+          regulatory:   ["regulatory", "legal", "compliance", "legal & compliance", "legal head", "regulatory affairs"],
+          energy:       ["energy", "sustainability", "environment", "energy management", "green", "esg"],
+        };
+
+        const normalise = (s) => (s || "").toLowerCase().replace(/[&_]/g, " ").replace(/\s+/g, " ").trim();
+
+        const matchedDept = DEPARTMENTS_CONFIG.find(d => {
+          const norm = normalise(deptName);
+          if (normalise(d.id) === norm) return true;
+          const tName = translations["en"]?.[d.id]?.name;
+          if (normalise(tName) === norm) return true;
+          const aliases = DEPT_ALIASES[d.id] || [];
+          return aliases.some(alias =>
+            normalise(alias) === norm ||
+            norm.includes(normalise(alias)) ||
+            normalise(alias).includes(norm)
+          );
+        });
 
           if (matchedDept) {
             const deptTranslations = translations["en"]?.[matchedDept.id] || {};
             matchedDepts.push({ _id: matchedDept.id, name: deptTranslations.name || matchedDept.id });
             
             const qs = matchedDept.questions.map(q => ({
-              _id: `${matchedDept.id}_${q.id}`, // prefix to avoid key collisions
+              _id: `${matchedDept.id}_${q.id}`,
               originalId: q.id,
               departmentId: matchedDept.id,
               departmentName: deptTranslations.name || matchedDept.id,
               type: q.type,
+              options: q.options,
               question: { en: deptTranslations[q.id] || `Question ${q.id}` }
             }));
             allDeptQs = [...allDeptQs, ...qs];
             
-            // Also try to load saved answers for these dept questions
+            // Load previously saved answers
             try {
               const myAnsRes = await api.get(`/answers/my/${matchedDept.id}`);
               (myAnsRes.data.answers || []).forEach(a => { 
                 allDeptAns[`${matchedDept.id}_${a.questionId}`] = a.answer; 
               });
-            } catch (e) {
-              // ignore if not found
-            }
+            } catch (e) { /* ignore */ }
           }
         }
         
@@ -279,26 +476,42 @@ export default function DeptDashboard() {
       setSaving(true);
       setError("");
 
-      // Save custom answers + problem details
+      // Build custom answers payload for the old system
       const customPayload = customQuestions.map(q => ({
         questionId: q._id,
         answer: answers[q._id] ?? "",
       }));
-      customPayload.push({
-        questionId: "problem_details",
-        answer: problemDetails
-      });
+      customPayload.push({ questionId: "problem_details", answer: problemDetails });
       await api.post("/custom-answers", { answers: customPayload });
 
-      // Save dept answers (using existing employeeAnswer endpoint)
-      if (deptQuestions.length > 0) {
-        const deptPayload = deptQuestions.map(q => ({
-          questionId: q.originalId,
-          answer: deptAnswers[q._id] ?? "",
-          departmentId: q.departmentId,
-        }));
-        await api.post("/answers", { answers: deptPayload });
+      // Build nested deptSnapshot: { deptId: { qId: answer } } for analytics
+      const deptSnapshot = {};
+      for (const q of deptQuestions) {
+        if (!deptSnapshot[q.departmentId]) deptSnapshot[q.departmentId] = {};
+        deptSnapshot[q.departmentId][q.originalId] = deptAnswers[q._id] ?? null;
       }
+
+      // Flat answers array for the old EmployeeAnswer system
+      const deptPayload = deptQuestions.map(q => ({
+        questionId: q.originalId,
+        answer: deptAnswers[q._id] ?? "",
+        departmentId: q.departmentId,
+      }));
+
+      // Custom answers formatted for analytics snapshot
+      const customForAnalytics = customQuestions.map(q => ({
+        questionId: q._id,
+        questionText: q.text,
+        answer: answers[q._id] ?? "",
+      }));
+
+      // POST to /api/answers — saves EmployeeAnswer docs AND DeptSubmission JSON snapshot
+      await api.post("/answers", {
+        answers: deptPayload,
+        deptSnapshot,
+        customAnswers: customForAnalytics,
+        problemDetails,
+      });
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -325,9 +538,25 @@ export default function DeptDashboard() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <h1 className="portal-page-title">My Questionnaire</h1>
-            <p className="portal-page-subtitle">
-              {user?.department} — Fill both panels and save at the bottom.
-            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <p className="portal-page-subtitle" style={{ margin: 0 }}>
+                {user?.department} — Fill both panels and save at the bottom.
+              </p>
+              
+              {/* Language Selector */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#f8fafc", padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 14 }}>🌐</span>
+                <select 
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value)}
+                  style={{ border: "none", background: "transparent", fontSize: "12px", fontWeight: "600", color: "#334155", outline: "none", cursor: "pointer" }}
+                >
+                  <option value="en">English</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="gu">ગુજરાતી (Gujarati)</option>
+                </select>
+              </div>
+            </div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: "var(--text-h)" }}>{progress}%</div>
@@ -371,12 +600,14 @@ export default function DeptDashboard() {
                     No custom questions assigned yet.
                   </div>
                 ) : (
-                  customQuestions.map(q => (
+                  customQuestions.map((q, idx) => (
                     <CustomQItem
                       key={q._id}
                       q={q}
+                      index={idx + 1}
                       answer={answers[q._id]}
                       onChange={handleCustomAnswer}
+                      lang={lang}
                     />
                   ))
                 )}
@@ -391,24 +622,31 @@ export default function DeptDashboard() {
                   
                   <div className="form-group" style={{ marginBottom: 16 }}>
                     <label className="form-label" style={{ fontSize: 12 }}>PROBLEM TITLE</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="e.g. Inventory Management Automation for Textile Business"
-                      value={problemDetails.title}
-                      onChange={e => setProblemDetails({ ...problemDetails, title: e.target.value })}
-                    />
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="e.g. Inventory Management Automation for Textile Business"
+                        value={problemDetails.title}
+                        onChange={e => setProblemDetails({ ...problemDetails, title: e.target.value })}
+                        style={{ flex: 1 }}
+                      />
+                      <MicButton lang={lang} onResult={(text) => setProblemDetails({ ...problemDetails, title: (problemDetails.title || "") + (problemDetails.title ? " " : "") + text })} />
+                    </div>
                   </div>
                   
                   <div className="form-group" style={{ marginBottom: 16 }}>
                     <label className="form-label" style={{ fontSize: 12 }}>PROBLEM DESCRIPTION</label>
-                    <textarea 
-                      className="form-textarea" 
-                      placeholder="Describe the core business problem in detail. What's causing it? What's the impact on your revenue or operations?"
-                      style={{ minHeight: 100 }}
-                      value={problemDetails.description}
-                      onChange={e => setProblemDetails({ ...problemDetails, description: e.target.value })}
-                    />
+                    <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                      <textarea 
+                        className="form-textarea" 
+                        placeholder="Describe the core business problem in detail. What's causing it? What's the impact on your revenue or operations?"
+                        style={{ minHeight: 100, flex: 1 }}
+                        value={problemDetails.description}
+                        onChange={e => setProblemDetails({ ...problemDetails, description: e.target.value })}
+                      />
+                      <MicButton lang={lang} onResult={(text) => setProblemDetails({ ...problemDetails, description: (problemDetails.description || "") + (problemDetails.description ? " " : "") + text })} />
+                    </div>
                   </div>
                   
                   <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-sub)", marginTop: 24, marginBottom: 12, borderBottom: "1px solid var(--border)", paddingBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
@@ -418,23 +656,29 @@ export default function DeptDashboard() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                     <div className="form-group">
                       <label className="form-label" style={{ fontSize: 12 }}>EXPECTED SOLUTION <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></label>
-                      <input 
-                        type="text" 
-                        className="form-input" 
-                        placeholder="e.g. AI-based inventory dashboard with real-time tracking"
-                        value={problemDetails.solution}
-                        onChange={e => setProblemDetails({ ...problemDetails, solution: e.target.value })}
-                      />
+                      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <textarea 
+                          className="form-textarea" 
+                          placeholder="e.g. AI-based inventory dashboard with real-time alerts"
+                          style={{ minHeight: 80, flex: 1 }}
+                          value={problemDetails.solution}
+                          onChange={e => setProblemDetails({ ...problemDetails, solution: e.target.value })}
+                        />
+                        <MicButton lang={lang} onResult={(text) => setProblemDetails({ ...problemDetails, solution: (problemDetails.solution || "") + (problemDetails.solution ? " " : "") + text })} />
+                      </div>
                     </div>
                     <div className="form-group">
                       <label className="form-label" style={{ fontSize: 12 }}>EXPECTED IMPACT <span style={{ fontWeight: 400, textTransform: "none" }}>(optional)</span></label>
-                      <input 
-                        type="text" 
-                        className="form-input" 
-                        placeholder="e.g. Reduce stock loss by 20%"
-                        value={problemDetails.impact}
-                        onChange={e => setProblemDetails({ ...problemDetails, impact: e.target.value })}
-                      />
+                      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <textarea 
+                          className="form-textarea" 
+                          placeholder="e.g. Reduce stock loss by 20% and save 10 hours/week"
+                          style={{ minHeight: 80, flex: 1 }}
+                          value={problemDetails.impact}
+                          onChange={e => setProblemDetails({ ...problemDetails, impact: e.target.value })}
+                        />
+                        <MicButton lang={lang} onResult={(text) => setProblemDetails({ ...problemDetails, impact: (problemDetails.impact || "") + (problemDetails.impact ? " " : "") + text })} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -470,10 +714,12 @@ export default function DeptDashboard() {
                         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.5px", marginBottom: 16, textTransform: "uppercase", borderBottom: "1px solid var(--border)", paddingBottom: 8 }}>
                           {dept.name}
                         </div>
-                        {qs.map(q => (
+                        {qs.map((q, idx) => (
                           <DeptQItem
                             key={q._id}
                             q={q}
+                            index={idx + 1}
+                            lang={lang}
                             answer={deptAnswers[q._id]}
                             onChange={handleDeptAnswer}
                           />
