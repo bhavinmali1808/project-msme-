@@ -460,38 +460,67 @@ export default function Register() {
   return (
     <div className="auth-wrapper" style={{ minHeight: "100vh", padding: "40px 20px", flexDirection: "column", gap: "20px" }}>
       
-      {/* Language Switcher Bar */}
+      {/* Top Navigation Bar with Back Button & Language Switcher */}
       <div style={{
         display: "flex",
-        background: "var(--code-bg)",
-        border: "1px solid var(--border)",
-        borderRadius: "20px",
-        padding: "4px",
-        gap: "4px"
+        justifyContent: "space-between",
+        alignItems: "center",
+        width: "100%",
+        maxWidth: "620px"
       }}>
-        {[
-          { code: "en", label: "English" },
-          { code: "hi", label: "हिंदी" },
-          { code: "gu", label: "ગુજરાતી" }
-        ].map((lang) => (
-          <button
-            key={lang.code}
-            type="button"
-            onClick={() => setLanguage(lang.code)}
-            style={{
-              padding: "6px 16px",
-              border: "none",
-              borderRadius: "16px",
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: "13px",
-              background: language === lang.code ? "var(--accent)" : "transparent",
-              color: language === lang.code ? "white" : "var(--text)"
-            }}
-          >
-            {lang.label}
-          </button>
-        ))}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 16px",
+            borderRadius: "20px",
+            border: "1px solid var(--border)",
+            background: "var(--code-bg)",
+            color: "var(--text)",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: 600
+          }}
+        >
+          ← {t.back || "Back"}
+        </button>
+
+        {/* Language Switcher Bar */}
+        <div style={{
+          display: "flex",
+          background: "var(--code-bg)",
+          border: "1px solid var(--border)",
+          borderRadius: "20px",
+          padding: "4px",
+          gap: "4px"
+        }}>
+          {[
+            { code: "en", label: "English" },
+            { code: "hi", label: "हिंदी" },
+            { code: "gu", label: "ગુજરાતી" }
+          ].map((lang) => (
+            <button
+              key={lang.code}
+              type="button"
+              onClick={() => setLanguage(lang.code)}
+              style={{
+                padding: "6px 16px",
+                border: "none",
+                borderRadius: "16px",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "13px",
+                background: language === lang.code ? "var(--accent)" : "transparent",
+                color: language === lang.code ? "white" : "var(--text)"
+              }}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="auth-card" style={{ maxWidth: "620px" }}>
@@ -712,7 +741,7 @@ export default function Register() {
           borderRadius: "30px",
           fontSize: "14px",
           fontWeight: 700,
-          boxShadow: "0 4px 12px rgba(255, 0, 0, 0.4)",
+          boxShadow: "0 4px 12px rgba(206, 17, 17, 0.79)",
           zIndex: 9999,
           display: "flex",
           alignItems: "center",
