@@ -6,8 +6,9 @@ import { ArrowLeft, GraduationCap, UserPlus, Search, CheckCircle } from "lucide-
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Cookies from "js-cookie";
 import api from "@/lib/api";
 
 interface University {
@@ -16,24 +17,25 @@ interface University {
   city: string;
 }
 
-const schema = z.object({
+const getSchema = (isStartup: boolean) => z.object({
   name: z.string().min(2, "Full name is required"),
   email: z.string().email("Valid email is required"),
   phone: z.string().min(10, "Valid phone number required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
-  universityId: z.string().min(1, "Please select your university"),
-  studentId: z.string().min(1, "Enrollment/Student ID is required"),
-  department: z.string().min(2, "Department is required"),
-  year: z.string().min(1, "Year of study is required"),
+  universityId: isStartup ? z.string().optional() : z.string().min(1, "Please select your university"),
+  studentId: isStartup ? z.string().optional() : z.string().min(1, "Enrollment/Student ID is required"),
+  department: isStartup ? z.string().optional() : z.string().min(2, "Department is required"),
+  year: isStartup ? z.string().optional() : z.string().min(1, "Year of study is required"),
   gender: z.string().min(1, "Gender is required"),
   city: z.string().min(2, "City is required"),
+  teamRole: z.string().min(2, "Primary role or skill is required"),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof getSchema>>;
 
 function FormInput({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
@@ -47,16 +49,21 @@ function FormInput({ label, error, children }: { label: string; error?: string; 
 
 const inputClass = "w-full border border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-400 rounded-2xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all text-sm";
 
-export default function StudentRegisterPage() {
+function StudentRegisterForm() {
   const [universities, setUniversities] = useState<University[]>([]);
   const [loadingUnis, setLoadingUnis] = useState(true);
-  const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const isStartup = searchParams.get("type") === "startup";
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(schema)
+    resolver: zodResolver(getSchema(isStartup))
   });
 
   const selectedUniId = watch("universityId");
@@ -64,28 +71,41 @@ export default function StudentRegisterPage() {
   useEffect(() => {
     api.get("/universities").then(({ data }) => {
       setUniversities(data);
-    }).catch(() => {}).finally(() => setLoadingUnis(false));
+    }).catch(() => { }).finally(() => setLoadingUnis(false));
   }, []);
 
-  const filteredUnis = universities.filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredUnis = universities.filter(u => 
+    u.name.toLowerCase().includes(search.toLowerCase()) || 
     u.city.toLowerCase().includes(search.toLowerCase())
   );
-
-  const selectedUni = universities.find(u => u._id === selectedUniId);
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     setError("");
     try {
-      const { data: res } = await api.post("/auth/register-student", {
-        name: data.name, email: data.email, phone: data.phone,
-        password: data.password, universityId: data.universityId,
-        studentId: data.studentId, department: data.department,
-        year: data.year, gender: data.gender, city: data.city
-      });
-      localStorage.setItem("hackathon_token", res.token);
-      localStorage.setItem("hackathon_user", JSON.stringify(res.user));
+      if (isStartup) {
+        const { data: res } = await api.post("/auth/register-participant", {
+          name: data.name, email: data.email, phone: data.phone,
+          password: data.password, category: "startup", city: data.city, gender: data.gender,
+          teamRole: data.teamRole
+        });
+        Cookies.set("hackathon_token", res.token, { expires: 7, path: '/' });
+        Cookies.set("hackathon_user", JSON.stringify(res.user), { expires: 7, path: '/' });
+        localStorage.setItem("hackathon_token", res.token);
+        localStorage.setItem("hackathon_user", JSON.stringify(res.user));
+      } else {
+        const { data: res } = await api.post("/auth/register-student", {
+          name: data.name, email: data.email, phone: data.phone,
+          password: data.password, universityId: data.universityId,
+          studentId: data.studentId, department: data.department,
+          year: data.year, gender: data.gender, city: data.city,
+          teamRole: data.teamRole
+        });
+        Cookies.set("hackathon_token", res.token, { expires: 7, path: '/' });
+        Cookies.set("hackathon_user", JSON.stringify(res.user), { expires: 7, path: '/' });
+        localStorage.setItem("hackathon_token", res.token);
+        localStorage.setItem("hackathon_user", JSON.stringify(res.user));
+      }
       router.push("/dashboard");
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Registration failed. Please try again.");
@@ -95,8 +115,8 @@ export default function StudentRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white py-12 px-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50/50 rounded-full blur-[130px] pointer-events-none" />
+    <div className="min-h-screen bg-white py-12 px-6 relative overflow-hidden" suppressHydrationWarning>
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-50/50 rounded-full blur-[130px] pointer-events-none" suppressHydrationWarning />
 
       <div className="max-w-3xl mx-auto relative z-10">
         <Link href="/register" className="inline-flex items-center gap-2 text-gray-400 hover:text-slate-700 transition-colors text-sm font-medium mb-8">
@@ -109,8 +129,12 @@ export default function StudentRegisterPage() {
               <GraduationCap className="text-blue-600" size={24} />
             </div>
             <div>
-              <h1 className="text-3xl font-heading font-bold text-slate-900">Student Registration</h1>
-              <p className="text-gray-400 text-sm">Join the hackathon through your university</p>
+              <h1 className="text-3xl font-heading font-bold text-slate-900">
+                {isStartup ? "Startup Registration" : "Student Registration"}
+              </h1>
+              <p className="text-gray-400 text-sm">
+                {isStartup ? "Register your startup for the hackathon" : "Join the hackathon through your university"}
+              </p>
             </div>
           </div>
 
@@ -121,61 +145,56 @@ export default function StudentRegisterPage() {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* University Selection */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-lg font-heading font-semibold text-slate-800 mb-1">Select Your University</h2>
-              <p className="text-sm text-gray-400 mb-5">Only registered & approved universities are shown below.</p>
-
-              {selectedUni ? (
-                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-2xl mb-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="text-blue-600" size={20} />
-                    <div>
-                      <p className="font-semibold text-slate-800 text-sm">{selectedUni.name}</p>
-                      <p className="text-xs text-gray-400">{selectedUni.city}</p>
-                    </div>
-                  </div>
-                  <button type="button" onClick={() => { setValue("universityId", ""); setSearch(""); }}
-                    className="text-xs text-blue-500 hover:text-blue-700 font-medium">
-                    Change
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
-                    <input
-                      type="text"
-                      placeholder="Search university name or city..."
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      className="w-full border border-gray-200 bg-gray-50 rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all"
-                    />
-                  </div>
-                  <input type="hidden" {...register("universityId")} />
+            {!isStartup && (
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+                <h2 className="text-lg font-heading font-semibold text-slate-800 mb-5">University Details</h2>
+                <FormInput label="Select University" error={errors.universityId?.message}>
                   {loadingUnis ? (
-                    <div className="text-center py-8 text-gray-300 text-sm">Loading universities...</div>
-                  ) : filteredUnis.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-400 text-sm">No registered universities found.</p>
-                      <p className="text-xs text-gray-300 mt-1">Ask your university to register first.</p>
-                    </div>
+                    <div className="w-full border border-gray-200 bg-gray-50 rounded-2xl px-4 py-3 text-sm text-gray-400">Loading universities...</div>
                   ) : (
-                    <div className="max-h-52 overflow-y-auto space-y-2 pr-1">
-                      {filteredUnis.map(uni => (
-                        <button key={uni._id} type="button"
-                          onClick={() => setValue("universityId", uni._id)}
-                          className="w-full text-left p-4 rounded-2xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all group">
-                          <p className="font-semibold text-slate-700 text-sm group-hover:text-blue-700">{uni.name}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{uni.city}</p>
-                        </button>
-                      ))}
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search or select your university..."
+                        value={search}
+                        onChange={e => {
+                          setSearch(e.target.value);
+                          setIsOpen(true);
+                          if (selectedUniId) setValue("universityId", "", { shouldValidate: true });
+                        }}
+                        onFocus={() => setIsOpen(true)}
+                        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+                        className={inputClass}
+                      />
+                      <input type="hidden" {...register("universityId")} />
+                      
+                      {isOpen && (
+                        <div className="absolute z-20 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                          {filteredUnis.length > 0 ? filteredUnis.map(uni => (
+                            <button
+                              key={uni._id}
+                              type="button"
+                              onClick={() => {
+                                setValue("universityId", uni._id, { shouldValidate: true });
+                                setSearch(`${uni.name} (${uni.city})`);
+                                setIsOpen(false);
+                              }}
+                              className="w-full text-left p-3 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0"
+                            >
+                              <div className="font-semibold text-slate-700 text-sm">{uni.name}</div>
+                              <div className="text-xs text-gray-400">{uni.city}</div>
+                            </button>
+                          )) : (
+                            <div className="p-3 text-sm text-gray-400">No universities found</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
-              {errors.universityId && <p className="text-red-500 text-xs mt-2">{errors.universityId.message}</p>}
-            </div>
+                </FormInput>
+                <p className="text-xs text-gray-400 mt-3">Only registered & approved universities are shown in the dropdown. If yours isn't listed, please ask your university administration to register.</p>
+              </div>
+            )}
 
             {/* Personal Details */}
             <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
@@ -201,31 +220,36 @@ export default function StudentRegisterPage() {
                 <FormInput label="City" error={errors.city?.message}>
                   <input {...register("city")} type="text" placeholder="Ahmedabad" className={inputClass} />
                 </FormInput>
+                <FormInput label="Team Role / Skill" error={errors.teamRole?.message}>
+                  <input {...register("teamRole")} type="text" placeholder="e.g. Frontend Dev, Designer" className={inputClass} />
+                </FormInput>
               </div>
             </div>
 
             {/* Academic Details */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-              <h2 className="text-lg font-heading font-semibold text-slate-800 mb-5">Academic Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormInput label="Enrollment / Student ID" error={errors.studentId?.message}>
-                  <input {...register("studentId")} type="text" placeholder="e.g. 21CEENL001" className={inputClass} />
-                </FormInput>
-                <FormInput label="Department / Branch" error={errors.department?.message}>
-                  <input {...register("department")} type="text" placeholder="e.g. Computer Engineering" className={inputClass} />
-                </FormInput>
-                <FormInput label="Year of Study" error={errors.year?.message}>
-                  <select {...register("year")} className={inputClass}>
-                    <option value="">Select Year</option>
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year</option>
-                    <option value="5">5th Year (PG/Diploma)</option>
-                  </select>
-                </FormInput>
+            {!isStartup && (
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+                <h2 className="text-lg font-heading font-semibold text-slate-800 mb-5">Academic Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormInput label="Enrollment / Student ID" error={errors.studentId?.message}>
+                    <input {...register("studentId")} type="text" placeholder="e.g. 21CEENL001" className={inputClass} />
+                  </FormInput>
+                  <FormInput label="Department / Branch" error={errors.department?.message}>
+                    <input {...register("department")} type="text" placeholder="e.g. Computer Engineering" className={inputClass} />
+                  </FormInput>
+                  <FormInput label="Year of Study" error={errors.year?.message}>
+                    <select {...register("year")} className={inputClass}>
+                      <option value="">Select Year</option>
+                      <option value="1">1st Year</option>
+                      <option value="2">2nd Year</option>
+                      <option value="3">3rd Year</option>
+                      <option value="4">4th Year</option>
+                      <option value="5">5th Year (PG/Diploma)</option>
+                    </select>
+                  </FormInput>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Security */}
             <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
@@ -265,5 +289,13 @@ export default function StudentRegisterPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function StudentRegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <StudentRegisterForm />
+    </Suspense>
   );
 }

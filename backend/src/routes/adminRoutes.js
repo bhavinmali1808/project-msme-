@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   adminLogin,
   getCompanies,
+  getCompanyDetails,
   getParticipants,
   updateCompanyStatus,
   updateParticipantStatus,
@@ -17,6 +18,7 @@ const {
 
 router.post("/login", adminLogin);
 router.get("/companies", getCompanies);
+router.get("/companies/:id/details", getCompanyDetails);
 router.get("/participants", getParticipants);
 router.get("/personnel", getMentorsAndEvaluators);
 router.post("/personnel", addPersonnel);

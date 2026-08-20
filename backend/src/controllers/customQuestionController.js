@@ -27,10 +27,17 @@ exports.createQuestion = async (req, res) => {
 exports.getQuestions = async (req, res) => {
   try {
     const { deptHeadId } = req.query;
-    const companyId = req.user.companyId;
+    let companyId = req.user.companyId;
     const role = req.user.role;
 
-    if (!companyId) return res.status(403).json({ message: "Forbidden" });
+    // If companyId isn't in token, look it up (common for dept_head users)
+    if (!companyId) {
+      const User = require("../models/User");
+      const dbUser = await User.findById(req.user.id).select("companyId").lean();
+      companyId = dbUser?.companyId?.toString();
+    }
+
+    if (!companyId) return res.status(403).json({ message: "Forbidden — no company linked to this account." });
 
     let filter = { companyId, active: true };
 

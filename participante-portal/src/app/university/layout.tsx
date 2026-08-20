@@ -11,7 +11,6 @@ const navItems = [
   { name: "Overview", href: "/university", icon: <LayoutDashboard size={18} /> },
   { name: "Students", href: "/university/students", icon: <GraduationCap size={18} /> },
   { name: "Teams", href: "/university/teams", icon: <UsersRound size={18} /> },
-  { name: "Mentors", href: "/university/mentors", icon: <Users size={18} /> },
 ];
 
 export default function UniversityLayout({ children }: { children: React.ReactNode }) {

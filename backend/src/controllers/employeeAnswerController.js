@@ -4,21 +4,30 @@ const Department = require("../models/Department");
 const Question = require("../models/Question");
 const CustomAnswer = require("../models/CustomAnswer");
 const CustomQuestion = require("../models/CustomQuestion");
+const DeptSubmission = require("../models/DeptSubmission");
 
 /**
  * Employee: Save multiple answers at once.
  * POST /api/answers
+ * Body: { answers: [{ questionId, answer, departmentId }], deptSnapshot?, customAnswers?, problemDetails? }
  */
 exports.saveMultipleAnswers = async (req, res) => {
   try {
     const employeeId = req.user.id;
-    const companyId = req.user.companyId;
-    const { answers, departmentId } = req.body;
+    let companyId = req.user.companyId;
+    const { answers, departmentId, deptSnapshot, customAnswers, problemDetails } = req.body;
+
+    // Resolve companyId if not in token
+    if (!companyId) {
+      const dbUser = await User.findById(employeeId).select("companyId companyName name department departments").lean();
+      companyId = dbUser?.companyId?.toString();
+    }
 
     if (!Array.isArray(answers)) {
       return res.status(400).json({ message: "answers array is required" });
     }
 
+    // 1. Upsert individual EmployeeAnswer documents (existing system)
     const bulkOps = answers.map((ans) => ({
       updateOne: {
         filter: { employeeId, questionId: ans.questionId },
@@ -39,7 +48,53 @@ exports.saveMultipleAnswers = async (req, res) => {
       await EmployeeAnswer.bulkWrite(bulkOps);
     }
 
-    res.json({ success: true, message: "Answers saved successfully." });
+    // 2. Build & upsert analytics JSON snapshot into DeptSubmission
+    const dbUser = await User.findById(employeeId).select("name companyName department departments").lean();
+
+    // Build nested deptAnswers map: { deptId: { qId: answer } }
+    let nestedDeptAnswers = {};
+    if (deptSnapshot && typeof deptSnapshot === "object") {
+      // Frontend sends the full nested map directly
+      nestedDeptAnswers = deptSnapshot;
+    } else {
+      // Fallback: reconstruct from flat answers array
+      for (const ans of answers) {
+        const dept = ans.departmentId || departmentId || "unknown";
+        if (!nestedDeptAnswers[dept]) nestedDeptAnswers[dept] = {};
+        nestedDeptAnswers[dept][ans.questionId] = ans.answer;
+      }
+    }
+
+    const allFilledDepts = Object.keys(nestedDeptAnswers);
+    const totalQ = answers.length + (customAnswers?.length || 0);
+    const answeredQ = answers.filter(a => a.answer !== "" && a.answer !== null && a.answer !== undefined).length
+      + (customAnswers || []).filter(a => a.answer !== "" && a.answer !== null && a.answer !== undefined).length;
+    const pct = totalQ > 0 ? Math.round((answeredQ / totalQ) * 100) : 0;
+
+    await DeptSubmission.findOneAndUpdate(
+      { employeeId },
+      {
+        $set: {
+          employeeId,
+          companyId: companyId || undefined,
+          employeeName: dbUser?.name,
+          companyName: dbUser?.companyName,
+          department: dbUser?.department,
+          departments: dbUser?.departments?.length > 0 ? dbUser.departments : (dbUser?.department ? [dbUser.department] : allFilledDepts),
+          deptAnswers: nestedDeptAnswers,
+          customAnswers: customAnswers || [],
+          problemDetails: problemDetails || {},
+          totalQuestions: totalQ,
+          answeredCount: answeredQ,
+          completionPct: pct,
+          isSubmitted: pct >= 100,
+          submittedAt: new Date(),
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true, message: "Answers saved successfully.", completionPct: pct });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

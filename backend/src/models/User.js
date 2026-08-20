@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
 
+    teamRole: {
+      type: String,
+    },
+
     teamId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Team"

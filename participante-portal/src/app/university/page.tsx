@@ -47,12 +47,6 @@ export default function UniversityOverviewPage() {
       icon: <UsersRound size={22} />,
       color: "text-violet-600", bg: "bg-violet-50", href: "/university/teams"
     },
-    {
-      label: "Assigned Mentors",
-      value: data.totalMentors,
-      icon: <Users size={22} />,
-      color: "text-emerald-600", bg: "bg-emerald-50", href: "/university/mentors"
-    },
   ] : [];
 
   return (
@@ -87,7 +81,7 @@ export default function UniversityOverviewPage() {
             <p className="text-sm font-semibold text-amber-800">Awaiting Approval</p>
             <p className="text-xs text-amber-600 mt-1">
               Your university is pending review by the hackathon admin. Students will be able to enroll once approved.
-              You can still set up mentors and explore the dashboard.
+              You can still explore the dashboard.
             </p>
           </div>
         </div>
@@ -115,19 +109,12 @@ export default function UniversityOverviewPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Link href="/university/mentors"
-          className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-3xl p-6 text-white hover:shadow-lg hover:shadow-violet-200 hover:-translate-y-0.5 transition-all group">
-          <Users size={28} className="mb-4 group-hover:scale-110 transition-transform" />
-          <h3 className="text-xl font-heading font-bold mb-2">Add Mentors</h3>
-          <p className="text-violet-100 text-sm">Add faculty or industry mentors to guide your student teams.</p>
-        </Link>
-
+      <div className="grid grid-cols-1 gap-5">
         <Link href="/university/teams"
-          className="bg-white border border-gray-100 rounded-3xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all group">
-          <UsersRound size={28} className="mb-4 text-slate-400 group-hover:text-violet-600 group-hover:scale-110 transition-all" />
-          <h3 className="text-xl font-heading font-bold text-slate-900 mb-2">Manage Teams</h3>
-          <p className="text-gray-400 text-sm">View team details and assign mentors to each team.</p>
+          className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-3xl p-6 text-white hover:shadow-lg hover:shadow-violet-200 hover:-translate-y-0.5 transition-all group">
+          <UsersRound size={28} className="mb-4 group-hover:scale-110 transition-transform" />
+          <h3 className="text-xl font-heading font-bold mb-2">Manage Teams</h3>
+          <p className="text-violet-100 text-sm">View team details from your university.</p>
         </Link>
       </div>
     </div>

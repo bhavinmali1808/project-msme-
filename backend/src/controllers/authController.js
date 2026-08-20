@@ -322,7 +322,7 @@ exports.registerStudent = async (req, res) => {
   try {
     const {
       name, email, phone, password,
-      universityId, studentId, department, year, gender, city, state
+      universityId, studentId, department, year, gender, city, state, teamRole
     } = req.body;
 
     if (!name || !email || !password || !universityId) {
@@ -349,6 +349,7 @@ exports.registerStudent = async (req, res) => {
       role: "participant",
       universityId,
       studentId,
+      teamRole,
       college: university.name,
       department,
       category: "student",

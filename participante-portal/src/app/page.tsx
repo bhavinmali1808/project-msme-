@@ -17,7 +17,7 @@ export default function Home() {
       <About />
       <Tracks />
       <Timeline />
-      <Prizes />
+
       <Sponsors />
       <FAQ />
       <Contact />

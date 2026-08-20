@@ -41,6 +41,7 @@ app.use("/api/custom-answers", require("./routes/customAnswerRoutes"));
 app.use("/api/answers", require("./routes/employeeAnswerRoutes"));
 app.use("/api/assessments", require("./routes/assessmentRoutes"));
 app.use("/api/universities", require("./routes/universityRoutes"));
+app.use("/api/announcements", require("./routes/announcementRoutes"));
 
 app.get("/", (req, res) => {
   res.json({

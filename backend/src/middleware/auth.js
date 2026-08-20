@@ -18,6 +18,16 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: "Token verification failed, authorization denied." });
     }
 
+    // If this is an admin token, bypass User lookup
+    if (verified.role === "admin") {
+      req.user = {
+        id: "admin",
+        role: "admin",
+        name: "Admin",
+      };
+      return next();
+    }
+
     // Fetch the full user so we always have companyId available
     const user = await User.findById(verified.id).select("-password");
     if (!user) {
@@ -28,7 +38,9 @@ const auth = async (req, res, next) => {
       id: user._id.toString(),
       companyId: user.companyId ? user.companyId.toString() : null,
       role: user.role,
-      companyName: user.companyName
+      companyName: user.companyName,
+      name: user.name,
+      universityId: user.universityId ? user.universityId.toString() : null,
     };
     next();
   } catch (err) {
