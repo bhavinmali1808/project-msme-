@@ -18,11 +18,11 @@ exports.createTeam = async (req, res) => {
       return res.status(400).json({ message: "Selected theme not found." });
     }
 
-    // One team per theme per user — check if already in a team for this theme
-    const existingTeam = await Team.findOne({ themeId, memberIds: userId });
-    if (existingTeam) {
+    // A user can only be in one team total
+    const user = await User.findById(userId);
+    if (user.teamId) {
       return res.status(400).json({
-        message: `You are already in a team for the "${theme.name}" theme.`
+        message: "You are already in a team. You must leave it before creating a new one."
       });
     }
 
@@ -34,8 +34,6 @@ exports.createTeam = async (req, res) => {
       codeExists = await Team.findOne({ inviteCode });
     }
 
-    const user = await User.findById(userId);
-
     const newTeam = await Team.create({
       teamName,
       themeId,
@@ -44,6 +42,9 @@ exports.createTeam = async (req, res) => {
       inviteCode,
       universityId: user.universityId || undefined,
     });
+
+    // Update the user to reflect their new team
+    await User.findByIdAndUpdate(userId, { teamId: newTeam._id });
 
     const populated = await Team.findById(newTeam._id)
       .populate("themeId", "name color description")
@@ -71,6 +72,15 @@ exports.joinTeam = async (req, res) => {
       return res.status(404).json({ message: "No team found with this invite code." });
     }
 
+    const user = await User.findById(userId);
+
+    // Enforce university restriction: participant can only join their university's teams
+    if (user.role === "participant" && user.universityId && team.universityId) {
+      if (String(user.universityId) !== String(team.universityId)) {
+        return res.status(400).json({ message: "You can only join teams from your own university." });
+      }
+    }
+
     // Check max members
     if (team.memberIds.length >= team.maxMembers) {
       return res.status(400).json({ message: "This team is full (max 4 members)." });
@@ -81,20 +91,18 @@ exports.joinTeam = async (req, res) => {
       return res.status(400).json({ message: "You are already in this team." });
     }
 
-    // One team per theme per user
-    const existingTeam = await Team.findOne({
-      themeId: team.themeId,
-      memberIds: userId,
-    });
-    if (existingTeam) {
-      const theme = await Theme.findById(team.themeId);
+    // A user can only be in one team total
+    if (user.teamId) {
       return res.status(400).json({
-        message: `You are already in a team for the "${theme?.name || "selected"}" theme.`
+        message: "You are already in a team. You must leave it before joining another."
       });
     }
 
     team.memberIds.push(userId);
     await team.save();
+
+    // Update user's teamId
+    await User.findByIdAndUpdate(userId, { teamId: team._id });
 
     const populated = await Team.findById(team._id)
       .populate("themeId", "name color description")
@@ -145,6 +153,9 @@ exports.leaveTeam = async (req, res) => {
     }
 
     team.memberIds = team.memberIds.filter(m => String(m) !== String(userId));
+    
+    // Clear user's teamId
+    await User.findByIdAndUpdate(userId, { $unset: { teamId: "" } });
 
     if (team.memberIds.length === 0) {
       await Team.findByIdAndDelete(id);

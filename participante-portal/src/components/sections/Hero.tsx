@@ -12,9 +12,15 @@ export default function Hero() {
 
   useEffect(() => {
     if (!particlesRef.current) return;
-    
+
     const particles = Array.from(particlesRef.current.children);
     particles.forEach((particle) => {
+      gsap.set(particle, {
+        width: "random(2, 8)",
+        height: "random(2, 8)",
+        top: "random(0, 100)%",
+        left: "random(0, 100)%",
+      });
       gsap.to(particle, {
         y: "random(-100, 100)",
         x: "random(-100, 100)",
@@ -28,7 +34,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section 
+    <section
       ref={heroRef}
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
@@ -45,12 +51,6 @@ export default function Hero() {
           <div
             key={i}
             className="absolute rounded-full bg-secondary/30"
-            style={{
-              width: Math.random() * 6 + 2 + "px",
-              height: Math.random() * 6 + 2 + "px",
-              top: Math.random() * 100 + "%",
-              left: Math.random() * 100 + "%",
-            }}
           />
         ))}
       </div>
@@ -64,16 +64,16 @@ export default function Hero() {
         >
           Dates Announced: Oct 15-17, 2026
         </motion.div>
-        
+
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-heading font-extrabold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-400"
+          className="text-5xl md:text-7xl lg:text-8xl font-heading font-extrabold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-black to-black"
         >
-          CODE FOR <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">GUJARAT</span> 2026
+          CODE FOR GUJARAT 2026
         </motion.h1>
-        
+
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export default function Hero() {
         >
           India's Biggest Student Innovation Hackathon where students solve real-world problems using AI, Web, Mobile, IoT and Cloud.
         </motion.p>
-        
+
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -107,7 +107,7 @@ export default function Hero() {
       </div>
 
       {/* Statistics Bottom Bar */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.8 }}

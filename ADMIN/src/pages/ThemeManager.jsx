@@ -1,13 +1,22 @@
 import { useState, useEffect } from "react";
-import { Palette, Save, Trash2 } from "lucide-react";
+import { Palette, Save, Trash2, Plus, Edit2, X, Check, Zap } from "lucide-react";
 import api from "../api";
+
+const PRESET_COLORS = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+  "#f97316", "#eab308", "#10b981", "#0ea5e9",
+  "#0284c7", "#7c3aed", "#db2777", "#059669",
+];
+
+const EMPTY = { name: "", color: "#6366f1", description: "" };
 
 export default function ThemeManager() {
   const [themes, setThemes] = useState([]);
-  const [name, setName] = useState("");
-  const [color, setColor] = useState("#3B82F6");
-  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState(null); // theme id being edited
+  const [form, setForm] = useState(EMPTY);
+  const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
   const fetchThemes = async () => {
@@ -21,127 +30,157 @@ export default function ThemeManager() {
     }
   };
 
-  useEffect(() => {
-    fetchThemes();
-  }, []);
+  useEffect(() => { fetchThemes(); }, []);
+
+  const flash = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+  };
+
+  const openNew = () => { setEditing(null); setForm(EMPTY); setShowForm(true); };
+  const openEdit = (t) => { setEditing(t._id); setForm({ name: t.name, color: t.color, description: t.description || "" }); setShowForm(true); };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
-
+    if (!form.name.trim()) return;
+    setSaving(true);
     try {
-      await api.post("/themes", { name, color, description });
-      setMessage({ type: "success", text: "Theme added successfully!" });
-      setName("");
-      setColor("#3B82F6");
-      setDescription("");
+      if (editing) {
+        await api.put(`/themes/${editing}`, form);
+        flash("success", "Theme updated!");
+      } else {
+        await api.post("/themes", form);
+        flash("success", "Theme created!");
+      }
+      setShowForm(false);
       fetchThemes();
     } catch (err) {
-      setMessage({ type: "error", text: err.response?.data?.message || "Failed to add theme." });
-    }
+      flash("error", err.response?.data?.message || "Save failed.");
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this theme?")) return;
+    if (!window.confirm("Delete this theme? Teams registered to it may be affected.")) return;
     try {
       await api.delete(`/themes/${id}`);
+      flash("success", "Theme deleted.");
       fetchThemes();
     } catch (err) {
-      alert("Failed to delete theme.");
+      flash("error", "Delete failed.");
     }
   };
 
-  if (loading) return <div style={{ padding: "40px" }}>Loading themes...</div>;
-
   return (
-    <div className="glass-panel" style={{ padding: "32px" }}>
-      <h2 style={{ fontSize: "20px", marginBottom: "24px", display: "flex", alignItems: "center", gap: "12px" }}>
-        <Palette size={24} color="var(--accent-primary)" /> Hackathon Themes
-      </h2>
+    <div style={{ padding: "32px", minHeight: "100vh", background: "#f8fafc" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "28px", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "28px", fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "12px", background: "linear-gradient(135deg,#8b5cf6,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Palette size={22} color="white" />
+            </div>
+            Hackathon Themes
+          </h1>
+          <p style={{ color: "#94a3b8", fontSize: "14px", margin: "6px 0 0 54px" }}>Define tracks/themes that participants can register teams under</p>
+        </div>
+        <button onClick={openNew} style={{ display: "flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg,#8b5cf6,#ec4899)", color: "white", border: "none", borderRadius: "12px", padding: "11px 22px", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 4px 14px rgba(139,92,246,0.35)" }}>
+          <Plus size={18} /> New Theme
+        </button>
+      </div>
 
       {message.text && (
-        <div style={{ 
-          padding: "12px", 
-          borderRadius: "8px", 
-          marginBottom: "24px", 
-          background: message.type === "success" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
-          color: message.type === "success" ? "#10B981" : "#EF4444"
-        }}>
-          {message.text}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "12px", marginBottom: "20px", background: message.type === "success" ? "#d1fae5" : "#fee2e2", color: message.type === "success" ? "#059669" : "#dc2626", fontWeight: 600, fontSize: "14px" }}>
+          <Check size={16} /> {message.text}
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px" }}>
-        
-        {/* Form */}
-        <form onSubmit={handleSave} style={{ background: "var(--bg-main)", padding: "24px", borderRadius: "12px", border: "1px solid var(--border)" }}>
-          <h3 style={{ fontSize: "16px", marginBottom: "20px" }}>Create New Theme</h3>
-          
-          <div className="form-group">
-            <label className="form-label">Theme Name</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g. Agritech, AI & ML"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Theme Color</label>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <input 
-                type="color" 
-                value={color}
-                onChange={e => setColor(e.target.value)}
-                style={{ width: "50px", height: "40px", padding: "0", border: "none", borderRadius: "4px", cursor: "pointer", background: "none" }}
-              />
-              <span style={{ color: "var(--text-secondary)", fontSize: "14px" }}>{color}</span>
+      {/* Form Modal */}
+      {showForm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+          <div style={{ background: "white", borderRadius: "20px", width: "100%", maxWidth: "500px", boxShadow: "0 25px 60px rgba(0,0,0,0.25)", overflow: "hidden" }}>
+            <div style={{ padding: "22px 26px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ margin: 0, fontWeight: 800, fontSize: "18px", color: "#0f172a" }}>{editing ? "Edit Theme" : "New Theme"}</h2>
+              <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}><X size={22} /></button>
             </div>
-          </div>
+            <form onSubmit={handleSave} style={{ padding: "24px 26px", display: "flex", flexDirection: "column", gap: "18px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "#475569" }}>Theme / Track Name *</span>
+                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. AgriTech, AI & Sustainability" required style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", outline: "none" }} />
+              </label>
 
-          <div className="form-group">
-            <label className="form-label">Description (Optional)</label>
-            <textarea 
-              className="form-input" 
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Brief description of this problem statement area."
-              rows={3}
-            />
-          </div>
-
-          <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-            <Save size={16} /> Save Theme
-          </button>
-        </form>
-
-        {/* Existing Themes */}
-        <div>
-          <h3 style={{ fontSize: "16px", marginBottom: "20px" }}>Active Themes</h3>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {themes.length === 0 ? (
-              <div style={{ color: "var(--text-secondary)", fontStyle: "italic" }}>No themes added yet.</div>
-            ) : (
-              themes.map(t => (
-                <div key={t._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", background: "var(--bg-main)", borderRadius: "8px", border: "1px solid var(--border)", borderLeft: `4px solid ${t.color}` }}>
-                  <div>
-                    <div style={{ fontWeight: "bold", fontSize: "14px" }}>{t.name}</div>
-                    {t.description && <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>{t.description}</div>}
-                  </div>
-                  <button onClick={() => handleDelete(t._id)} style={{ background: "none", border: "none", color: "var(--accent-danger)", cursor: "pointer", padding: "4px" }}>
-                    <Trash2 size={16} />
-                  </button>
+              <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "#475569" }}>Theme Color</span>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "4px" }}>
+                  {PRESET_COLORS.map(c => (
+                    <button key={c} type="button" onClick={() => setForm(f => ({ ...f, color: c }))}
+                      style={{ width: "28px", height: "28px", borderRadius: "50%", background: c, border: form.color === c ? "3px solid #0f172a" : "2px solid transparent", cursor: "pointer", flexShrink: 0 }} />
+                  ))}
                 </div>
-              ))
-            )}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <input type="color" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                    style={{ width: "44px", height: "40px", padding: "2px", border: "1px solid #e2e8f0", borderRadius: "8px", cursor: "pointer" }} />
+                  <span style={{ fontSize: "13px", color: "#64748b", fontFamily: "monospace" }}>{form.color}</span>
+                  <div style={{ flex: 1, height: "32px", borderRadius: "8px", background: form.color, opacity: 0.3 }} />
+                </div>
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontWeight: 700, fontSize: "13px", color: "#475569" }}>Description (Optional)</span>
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description of this problem space..." rows={3} style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", outline: "none", resize: "vertical" }} />
+              </label>
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setShowForm(false)} style={{ padding: "10px 20px", border: "1px solid #e2e8f0", borderRadius: "10px", background: "white", cursor: "pointer", fontSize: "14px", fontWeight: 600, color: "#475569" }}>Cancel</button>
+                <button type="submit" disabled={saving} style={{ padding: "10px 24px", background: "linear-gradient(135deg,#8b5cf6,#ec4899)", color: "white", border: "none", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: 700, opacity: saving ? 0.7 : 1 }}>
+                  {saving ? "Saving..." : (editing ? "Save Changes" : "Create Theme")}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
+      )}
 
-      </div>
+      {/* Themes Grid */}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "60px", color: "#94a3b8" }}>Loading themes...</div>
+      ) : themes.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "80px 24px", background: "white", borderRadius: "20px", border: "2px dashed #e2e8f0" }}>
+          <Palette size={48} style={{ margin: "0 auto 16px", opacity: 0.2 }} />
+          <p style={{ fontWeight: 700, color: "#334155", fontSize: "18px", margin: "0 0 6px" }}>No themes yet</p>
+          <p style={{ color: "#94a3b8", fontSize: "14px" }}>Create your first theme/track for the hackathon.</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "16px" }}>
+          {themes.map(t => (
+            <div key={t._id} style={{ background: "white", borderRadius: "18px", overflow: "hidden", boxShadow: "0 1px 6px rgba(0,0,0,0.07)", border: "1px solid #f1f5f9" }}>
+              {/* Color bar */}
+              <div style={{ height: "6px", background: t.color }} />
+              <div style={{ padding: "20px 22px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: t.color + "22", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Zap size={20} style={{ color: t.color }} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: "16px", color: "#0f172a" }}>{t.name}</div>
+                      <div style={{ fontSize: "11px", fontFamily: "monospace", color: "#94a3b8", marginTop: "2px" }}>{t.color}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button onClick={() => openEdit(t)} style={{ background: "#eef2ff", border: "none", borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Edit2 size={14} color="#6366f1" />
+                    </button>
+                    <button onClick={() => handleDelete(t._id)} style={{ background: "#fee2e2", border: "none", borderRadius: "8px", width: "32px", height: "32px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <Trash2 size={14} color="#dc2626" />
+                    </button>
+                  </div>
+                </div>
+                {t.description && <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.6 }}>{t.description}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

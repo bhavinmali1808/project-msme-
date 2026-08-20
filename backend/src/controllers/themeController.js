@@ -30,3 +30,19 @@ exports.deleteTheme = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.updateTheme = async (req, res) => {
+  try {
+    const { name, color, description } = req.body;
+    const theme = await Theme.findByIdAndUpdate(
+      req.params.id,
+      { name, color, description },
+      { new: true }
+    );
+    if (!theme) return res.status(404).json({ message: "Theme not found" });
+    res.json({ success: true, theme });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
